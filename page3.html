@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>yhc on github</title>
+		<style>
+			#butt {
+				width: 150px;
+				height: 150px;
+				border-radius: 75px;
+				border: 2px solid gray;
+				background-color: brown;
+			}
+			#butt:hover {
+				border: 2px solid whitesmoke;
+				transform: rotate(360deg);
+				transition-duration: 0.1s;
+				background-color: chocolate;
+			}
+		</style>
+		<script>
+			function butt_click() {
+				document.getElementById("show").innerHTML = "click.";
+			}
+			function butt_dbclick() {
+				document.getElementById("show").innerHTML = "double click.";
+			}
+		</script>
+	</head>
+	<body>
+		<h1>Page 3</h1>
+		<p>This is page 3.</p>
+		<br>
+		<h2>section 1</h2>
+		<p>hello MDFK</p>
+		<br>
+		<!-- <p>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</p> -->
+		<h2>Here is a button</h2>
+		<p>--- vvv --- push --- vvv ---</p>
+		<button id="butt" type="button" onclick="butt_click()" ondblclick="butt_dbclick()">click me</button>
+		<p>--- ^^^ --- push --- ^^^ ---</p>
+		<div id="show">hey</div>
+	</body>
+</html>
