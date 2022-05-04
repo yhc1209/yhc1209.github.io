@@ -40,13 +40,23 @@
                 document.getElementById("pic").src = "imgs/nope.png";
                 // document.getElementById("count").innerText = c++;
             }
+
+            function btn_onclick() {
+                document.getElementById("pic").src = "imgs/pop.png";
+                document.getElementById("aud").play();
+                setTimeout(
+                    btn_onmouseup, 
+                    100
+                )
+                
+            }
         </script>
 	</head>
 	<body>
 		<h1 id="title">POP CAT</h1>
         <!-- <p id="count">0</p> -->
         <div id="d1">
-            <button id="btn" onmousedown="btn_onmousedown()" onmouseup="btn_onmouseup()">
+            <button id="btn" onclick="btn_onclick()">
                 <img id="pic" src="imgs/nope.png">
                 <audio id="aud" src="audio/pop4.mp3" preload="auto"></audio>
             </button>
