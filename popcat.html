@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>yhc on github</title>
+		<style>
+            body {
+                background-color: black;
+            }
+            #d1 {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+			#title {
+                text-align: center;
+				color: rgb(255, 0, 255)
+			}
+			#count {
+                text-align: center;
+				color: rgb(255, 238, 0)
+			}
+            #btn {
+                padding: 0;
+                background-color: black;
+                border: none;
+                display: block;
+            }
+		</style>
+        <script>
+            // var c = 0;
+
+            function btn_onmousedown() {
+                document.getElementById("pic").src = "imgs/pop.png";
+                document.getElementById("aud").play();
+            }
+
+            function btn_onmouseup() {
+                document.getElementById("pic").src = "imgs/nope.png";
+                // document.getElementById("count").innerText = c++;
+            }
+        </script>
+	</head>
+	<body>
+		<h1 id="title">POP CAT</h1>
+        <!-- <p id="count">0</p> -->
+        <div id="d1">
+            <button id="btn" onmousedown="btn_onmousedown()" onmouseup="btn_onmouseup()">
+                <img id="pic" src="imgs/nope.png">
+                <audio id="aud" src="audio/pop4.mp3" preload="auto"></audio>
+            </button>
+        </div>
+	</body>
+</html>
