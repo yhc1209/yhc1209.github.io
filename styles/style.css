@@ -17,7 +17,8 @@
     /* width: 114px;
     height: 60px;
     border: 5px solid black; */
-    transform: rotate(13deg) translate(-3px, -100px);
+    /* transform: rotat(13deg) translate(-3px, -100px); */
+    transform: rotation 2s infinite linear;
     transition-duration: 0.8s;
 }
 
