@@ -38,6 +38,47 @@
 #rightCol {
     width: 70%;
     height: 100%;
-    background-color: whitesmoke;
+    background-color: rgb(138, 222, 138);
     padding: 3px;
+    border: yellowgreen 2px dashed;
+}
+
+#rightColDiv {
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    /* background-color: darkgray; */
+}
+
+#step1 {
+    display: block;
+    align-content: center;
+    /* background-color: aquamarine; */
+}
+#step2 {
+    display: none;
+    align-content: center;
+    /* background-color: aquamarine; */
+}
+#step3 {
+    display: none;
+    align-content: center;
+    /* background-color: aquamarine; */
+}
+#step4 {
+    display: none;
+    align-content: center;
+    /* background-color: aquamarine; */
+}
+#step5 {
+    display: none;
+    align-content: center;
+    /* background-color: aquamarine; */
+}
+
+.moving-button {
+    padding: 5px;
+    text-align: center;
+    font-size: larger;
+    border-radius: 5px;
 }
