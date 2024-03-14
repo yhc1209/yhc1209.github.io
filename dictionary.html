@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>網頁標題</title>
+        <script type="text/script" src="scripts/dictionaryPage.js"></script>
+    </head>
+    <body>
+        <h1>字典測試</h1>
+        <h2>測試</h2>
+        <p>這是一個段落</p>
+        <button onclick="console.log('hello')">這邊有按鈕1</button>
+        <button onclick="console.log('hi')">這邊有按鈕2</button>
+        <form id="dictionary-form" onsubmit="SearchFromDict(event)">
+            <input id="word" type="text" name="word" placeholder="請輸入要查詢的字詞"/>
+            <button onclick="SearchFromDict(event)">查詢</button>
+        </form>
+        <div>
+            <h3 id="result_text"></h3>
+            <p id="pronounce1" class="pronunce"></p>
+            <p id="pronounce2" class="pronunce"></p>
+            <div id="defination"></div>
+        </div>
+    </body>
+</html>
