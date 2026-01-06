@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業 Tabata 計時器</title>
+    <style>
+        :root {
+            --work-color: #ff4757;
+            --rest-color: #2ed573;
+            --bg-color: #2f3542;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background: #3e4451;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 400px;
+        }
+        .timer-display {
+            font-size: 5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            transition: color 0.3s;
+        }
+        .status {
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.8rem;
+        }
+        input {
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            margin-top: 5px;
+            text-align: center;
+        }
+        .controls button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: 0.2s;
+            margin: 5px;
+        }
+        .btn-start { background-color: #1e90ff; color: white; }
+        .btn-reset { background-color: #747d8c; color: white; }
+        .btn-start:hover { opacity: 0.8; }
+        
+        /* 狀態顏色變化 */
+        .work-mode { color: var(--work-color); }
+        .rest-mode { color: var(--rest-color); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="status" class="status">準備開始</div>
+    <div id="timer" class="timer-display">00</div>
+    <div id="round-display" style="margin-bottom: 20px;">回合: 0 / 8</div>
+
+    <div class="settings">
+        <div class="input-group">
+            <label>運動 (秒)</label>
+            <input type="number" id="workTime" value="20">
+        </div>
+        <div class="input-group">
+            <label>休息 (秒)</label>
+            <input type="number" id="restTime" value="10">
+        </div>
+        <div class="input-group" style="grid-column: span 2;">
+            <label>總回合數</label>
+            <input type="number" id="totalRounds" value="8">
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-start" id="startBtn">開始訓練</button>
+        <button class="btn-reset" id="resetBtn">重設</button>
+    </div>
+</div>
+
+<!-- 嗶聲特效（使用 Web Audio API，無需外部音檔） -->
+<script>
+    let timer;
+    let timeLeft;
+    let currentRound = 1;
+    let isWorking = true;
+    let isRunning = false;
+
+    const timerDisplay = document.getElementById('timer');
+    const statusDisplay = document.getElementById('status');
+    const roundDisplay = document.getElementById('round-display');
+    const startBtn = document.getElementById('startBtn');
+
+    // 嗶聲函數
+    function playSound(frequency = 440, duration = 0.2) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.frequency.value = frequency;
+        oscillator.start();
+        setTimeout(() => oscillator.stop(), duration * 1000);
+    }
+
+    function updateDisplay() {
+        timerDisplay.innerText = timeLeft;
+        roundDisplay.innerText = `回合: ${currentRound} / ${document.getElementById('totalRounds').value}`;
+        
+        if (isWorking) {
+            statusDisplay.innerText = "運動中 🔥";
+            timerDisplay.className = "timer-display work-mode";
+        } else {
+            statusDisplay.innerText = "休息時間 🧊";
+            timerDisplay.className = "timer-display rest-mode";
+        }
+    }
+
+    function startTimer() {
+        if (isRunning) {
+            clearInterval(timer);
+            startBtn.innerText = "繼續";
+            isRunning = false;
+            return;
+        }
+
+        const workSec = parseInt(document.getElementById('workTime').value);
+        const restSec = parseInt(document.getElementById('restTime').value);
+        const totalRounds = parseInt(document.getElementById('totalRounds').value);
+
+        if (!timeLeft) timeLeft = workSec;
+        isRunning = true;
+        startBtn.innerText = "暫停";
+
+        timer = setInterval(() => {
+            timeLeft--;
+            
+            // 最後三秒嗶一聲
+            if (timeLeft <= 3 && timeLeft > 0) playSound(600, 0.1);
+            if (timeLeft === 0) playSound(800, 0.5);
+
+            if (timeLeft < 0) {
+                if (isWorking) {
+                    isWorking = false;
+                    timeLeft = restSec;
+                } else {
+                    isWorking = true;
+                    currentRound++;
+                    timeLeft = workSec;
+                }
+
+                if (currentRound > totalRounds) {
+                    clearInterval(timer);
+                    alert("恭喜完成訓練！");
+                    reset();
+                    return;
+                }
+            }
+            updateDisplay();
+        }, 1000);
+    }
+
+    function reset() {
+        clearInterval(timer);
+        isRunning = false;
+        isWorking = true;
+        currentRound = 1;
+        timeLeft = null;
+        startBtn.innerText = "開始訓練";
+        statusDisplay.innerText = "準備開始";
+        timerDisplay.innerText = "00";
+        timerDisplay.className = "timer-display";
+        roundDisplay.innerText = "回合: 0 / 8";
+    }
+
+    startBtn.addEventListener('click', startTimer);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+</script>
+
+</body>
+</html>
