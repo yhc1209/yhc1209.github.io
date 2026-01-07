@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1A2B 猜數字遊戲</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #f4f4f9; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 300px; text-align: center; }
+        input { width: 60%; padding: 10px; font-size: 16px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        button { padding: 10px 20px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; }
+        button:hover { background-color: #218838; }
+        #history { margin-top: 20px; text-align: left; width: 100%; max-height: 200px; overflow-y: auto; border-top: 1px solid #eee; padding-top: 10px; }
+        .log { margin-bottom: 5px; font-family: monospace; }
+        .success { color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>1A2B 猜數字</h2>
+    <p>請輸入 4 個不重複的數字</p>
+    <input type="text" id="guessInput" maxlength="4" placeholder="例如：1234" onkeydown="if(event.key==='Enter') checkGuess()">
+    <br>
+    <button onclick="checkGuess()">猜！</button>
+    <button onclick="resetGame()" style="background-color: #6c757d;">重新開始</button>
+
+    <div id="history"></div>
+</div>
+
+<script>
+    let answer = [];
+
+    // 初始化遊戲，生成 4 個不重複數字
+    function resetGame() {
+        answer = [];
+        let nums = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        nums.sort(() => Math.random() - 0.5);
+        answer = nums.slice(0, 4);
+        document.getElementById('history').innerHTML = '<b>遊戲紀錄：</b><br>';
+        document.getElementById('guessInput').value = '';
+        console.log("答案是 (調試用): " + answer.join('')); // 偷偷看答案可以在控制台看
+    }
+
+    function checkGuess() {
+        const input = document.getElementById('guessInput');
+        const guessStr = input.value;
+        const history = document.getElementById('history');
+
+        // 檢查輸入合法性
+        if (guessStr.length !== 4 || isNaN(guessStr) || new Set(guessStr).size !== 4) {
+            alert("請輸入 4 個「不重複」的數字！");
+            return;
+        }
+
+        let guessArr = guessStr.split('').map(Number);
+        let a = 0;
+        let b = 0;
+
+        // 比對邏輯
+        for (let i = 0; i < 4; i++) {
+            if (guessArr[i] === answer[i]) {
+                a++;
+            } else if (answer.includes(guessArr[i])) {
+                b++;
+            }
+        }
+
+        // 顯示結果
+        const resultText = `${guessStr} ➔ ${a}A${b}B`;
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log';
+        logEntry.textContent = resultText;
+
+        if (a === 4) {
+            logEntry.innerHTML = `<span class="success">恭喜答對！答案就是 ${guessStr}</span>`;
+            alert("太強了！你贏了！");
+        }
+
+        history.prepend(logEntry);
+        input.value = ''; // 清空輸入框
+        input.focus();
+    }
+
+    // 頁面載入時啟動遊戲
+    resetGame();
+</script>
+
+</body>
+</html>
