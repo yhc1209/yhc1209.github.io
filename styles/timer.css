@@ -1,0 +1,70 @@
+
+:root {
+    --work-color: #ff4757;
+    --rest-color: #2ed573;
+    --bg-color: #2f3542;
+}
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+.container {
+    text-align: center;
+    background: #3e4451;
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    width: 90%;
+    max-width: 400px;
+}
+.timer-display {
+    font-size: 5rem;
+    font-weight: bold;
+    margin: 20px 0;
+    transition: color 0.3s;
+}
+.status {
+    font-size: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+.settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.input-group {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.8rem;
+}
+input {
+    padding: 8px;
+    border-radius: 5px;
+    border: none;
+    margin-top: 5px;
+    text-align: center;
+}
+.controls button {
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    transition: 0.2s;
+    margin: 5px;
+}
+.btn-start { background-color: #1e90ff; color: white; }
+.btn-reset { background-color: #747d8c; color: white; }
+.btn-start:hover { opacity: 0.8; }
+
+/* 狀態顏色變化 */
+.work-mode { color: var(--work-color); }
+.rest-mode { color: var(--rest-color); }
