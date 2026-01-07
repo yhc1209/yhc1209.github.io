@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網頁踩地雷</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background-color: #e9ecef; }
+        .controls { margin: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .controls input { width: 50px; margin-right: 10px; }
+        
+        #grid { 
+            display: grid; 
+            gap: 2px; 
+            background-color: #bbb; 
+            border: 3px solid #777;
+            user-select: none;
+        }
+        .cell {
+            width: 30px; height: 30px;
+            background-color: #ccc;
+            border: 3px outset #eee;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; cursor: pointer;
+        }
+        .cell.revealed { border: 1px solid #999; background-color: #ddd; cursor: default; }
+        .cell.mine { background-color: red !important; }
+        .cell.flagged { background-color: #ccc; color: red; }
+        
+        /* 數字顏色 */
+        .n1 { color: blue; } .n2 { color: green; } .n3 { color: red; }
+        .n4 { color: darkblue; } .n5 { color: darkred; }
+    </style>
+</head>
+<body>
+
+<h1>經典踩地雷</h1>
+
+<div class="controls">
+    寬: <input type="number" id="width" value="10" min="5" max="30">
+    高: <input type="number" id="height" value="10" min="5" max="30">
+    地雷數: <input type="number" id="mines" value="15" min="1">
+    <button onclick="initGame()">開始新遊戲</button>
+</div>
+
+<div id="status" style="margin-bottom: 10px; font-weight: bold;"></div>
+<div id="grid"></div>
+
+<script>
+    let width, height, mineCount;
+    let board = [];
+    let revealedCount = 0;
+    let gameOver = false;
+
+    function initGame() {
+        width = parseInt(document.getElementById('width').value);
+        height = parseInt(document.getElementById('height').value);
+        mineCount = parseInt(document.getElementById('mines').value);
+        
+        // 防呆
+        if (mineCount >= width * height) {
+            alert("地雷太多了！");
+            return;
+        }
+
+        board = [];
+        revealedCount = 0;
+        gameOver = false;
+        document.getElementById('status').textContent = "遊戲進行中... (右鍵可插旗)";
+        const gridDisplay = document.getElementById('grid');
+        gridDisplay.innerHTML = '';
+        gridDisplay.style.gridTemplateColumns = `repeat(${width}, 30px)`;
+
+        // 1. 初始化陣列
+        for (let r = 0; r < height; r++) {
+            board[r] = [];
+            for (let c = 0; c < width; c++) {
+                board[r][c] = { isMine: false, revealed: false, flagged: false, count: 0, r, c };
+            }
+        }
+
+        // 2. 隨機佈雷
+        let placedMines = 0;
+        while (placedMines < mineCount) {
+            let r = Math.floor(Math.random() * height);
+            let c = Math.floor(Math.random() * width);
+            if (!board[r][c].isMine) {
+                board[r][c].isMine = true;
+                placedMines++;
+            }
+        }
+
+        // 3. 計算周圍數字
+        for (let r = 0; r < height; r++) {
+            for (let c = 0; c < width; c++) {
+                if (!board[r][c].isMine) {
+                    board[r][c].count = countNeighborMines(r, c);
+                }
+            }
+        }
+
+        // 4. 渲染畫面
+        for (let r = 0; r < height; r++) {
+            for (let c = 0; c < width; c++) {
+                const cellDiv = document.createElement('div');
+                cellDiv.id = `cell-${r}-${c}`;
+                cellDiv.className = 'cell';
+                
+                // 左鍵點擊
+                cellDiv.onclick = () => handleClick(r, c);
+                // 右鍵插旗
+                cellDiv.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    handleRightClick(r, c);
+                };
+                
+                gridDisplay.appendChild(cellDiv);
+            }
+        }
+    }
+
+    function countNeighborMines(r, c) {
+        let count = 0;
+        for (let i = -1; i <= 1; i++) {
+            for (let j = -1; j <= 1; j++) {
+                if (board[r+i] && board[r+i][c+j] && board[r+i][c+j].isMine) count++;
+            }
+        }
+        return count;
+    }
+
+    function handleClick(r, c) {
+        if (gameOver || board[r][c].revealed || board[r][c].flagged) return;
+
+        if (board[r][c].isMine) {
+            revealAll();
+            document.getElementById('status').textContent = "碰！炸彈爆炸了，遊戲結束。";
+            gameOver = true;
+            return;
+        }
+
+        revealCell(r, c);
+
+        if (revealedCount === width * height - mineCount) {
+            document.getElementById('status').textContent = "恭喜！你成功排除了所有地雷！";
+            gameOver = true;
+        }
+    }
+
+    function revealCell(r, c) {
+        if (!board[r] || !board[r][c] || board[r][c].revealed || board[r][c].flagged) return;
+
+        const cell = board[r][c];
+        const el = document.getElementById(`cell-${r}-${c}`);
+        
+        cell.revealed = true;
+        revealedCount++;
+        el.classList.add('revealed');
+        el.style.border = "1px solid #ccc";
+
+        if (cell.count > 0) {
+            el.textContent = cell.count;
+            el.classList.add('n' + cell.count);
+        } else {
+            // 如果是 0，遞迴展開周圍
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    revealCell(r + i, c + j);
+                }
+            }
+        }
+    }
+
+    function handleRightClick(r, c) {
+        if (gameOver || board[r][c].revealed) return;
+        const cell = board[r][c];
+        const el = document.getElementById(`cell-${r}-${c}`);
+        
+        cell.flagged = !cell.flagged;
+        el.textContent = cell.flagged ? "🚩" : "";
+        el.classList.toggle('flagged');
+    }
+
+    function revealAll() {
+        for (let r = 0; r < height; r++) {
+            for (let c = 0; c < width; c++) {
+                const el = document.getElementById(`cell-${r}-${c}`);
+                if (board[r][c].isMine) {
+                    el.textContent = "💣";
+                    el.classList.add('mine');
+                }
+            }
+        }
+    }
+
+    // 初始化第一局
+    initGame();
+</script>
+
+</body>
+</html>
