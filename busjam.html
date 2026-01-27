@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Jam 邏輯優化版</title>
+    <style>
+        :root { --cell: 52px; --gap: 4px; }
+        body { font-family: sans-serif; background: #121212; color: white; display: flex; flex-direction: column; align-items: center; margin: 0; overflow: hidden; touch-action: manipulation; }
+        
+        /* S型隊伍：末端增加轉折直指臨停區 */
+        #queue-viewport { 
+            width: 340px; height: 120px; position: relative; 
+            margin-top: 10px; background: rgba(255,255,255,0.05); 
+            border-radius: 15px; border: 1px solid #333;
+        }
+        .person { 
+            position: absolute; width: 22px; height: 22px; border-radius: 50%; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            border: 2px solid rgba(255,255,255,0.8);
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 10px; font-weight: bold; color: black;
+        }
+        /* 出口標示 */
+        .exit-gate { position: absolute; left: 15px; bottom: 0; width: 30px; height: 10px; background: #2ecc71; border-radius: 5px 5px 0 0; }
+
+        #parking-lots { display: flex; justify-content: center; gap: 5px; background: #222; padding: 10px; border-radius: 10px; margin: 10px 0; width: 340px; border: 2px solid #444; }
+        .lot { width: 42px; height: 60px; border: 2px dashed #555; border-radius: 5px; position: relative; }
+        .bus-in-lot { width: 100%; height: 100%; border-radius: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: #000; }
+
+        #grid { 
+            display: grid; grid-template-columns: repeat(6, var(--cell)); grid-template-rows: repeat(6, var(--cell)); 
+            gap: var(--gap); background: #333; padding: 8px; border-radius: 10px; position: relative; border: 4px solid #444;
+        }
+        .cell { width: var(--cell); height: var(--cell); background: #444; border-radius: 4px; }
+        
+        .vehicle { 
+            position: absolute; border-radius: 8px; cursor: pointer; display: flex; align-items: center; 
+            justify-content: center; font-size: 22px; color: white; text-shadow: 1px 1px 3px black;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.5); transition: transform 0.1s;
+        }
+        .vehicle::after { content: ''; position: absolute; width: 80%; height: 2px; background: rgba(255,255,255,0.2); bottom: 20%; }
+        
+        #msg { margin: 10px 0; font-size: 18px; font-weight: bold; color: #00d4ff; min-height: 24px; text-align: center; }
+        .btn { padding: 12px 24px; background: #e67e22; border: none; color: white; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px #d35400; }
+        .btn:active { transform: translateY(2px); box-shadow: 0 2px #d35400; }
+    </style>
+</head>
+<body>
+
+    <h2 style="margin:5px">Bus Jam Pro</h2>
+    
+    <div id="queue-viewport">
+        <div class="exit-gate"></div>
+    </div>
+
+    <div id="parking-lots">
+        <script>for(let i=0; i<7; i++) document.write('<div class="lot"></div>');</script>
+    </div>
+
+    <div id="grid">
+        <script>for(let i=0; i<36; i++) document.write('<div class="cell"></div>');</script>
+    </div>
+
+    <div id="msg">初始化地圖中...</div>
+    <button class="btn" onclick="location.reload()">重新生成地圖</button>
+
+<script>
+const GRID_SIZE = 6;
+const COLORS = ['#FF3B30', '#007AFF', '#34C759', '#FFCC00', '#AF52DE', '#FF9500'];
+const CELL = 52 + 4;
+
+// 1. 優化後的 S 型路徑：最後一個點轉向臨停區
+const PATH = [];
+function initPath() {
+    // 入口在右上
+    for(let x=310; x>=30; x-=26) PATH.push({x, y: 15});    // 第一排：右往左
+    for(let x=30; x<=310; x+=26) PATH.push({x, y: 50});    // 第二排：左往右
+    for(let x=310; x>=30; x-=26) PATH.push({x, y: 85});    // 第三排：右往左
+    // 最後轉向點：向下朝向臨停區
+    PATH[PATH.length-1] = {x: 20, y: 85}; 
+    PATH.push({x: 20, y: 105}); // 真正的出口點
+    PATH.reverse(); // 讓 Index 0 是最靠近出口的
+}
+initPath();
+
+let vehicles = [];
+let queue = [];
+let parkingLots = Array(7).fill(null);
+let gameActive = true;
+
+// 2. 隨機關卡生成器 (加入防止死對頭檢查)
+function generateLevel() {
+    const grid = Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(null));
+    let idCounter = 1;
+    const colorsInUse = COLORS.slice(0, 5);
+
+    for (let attempt = 0; attempt < 150 && vehicles.length < 14; attempt++) {
+        const len = Math.random() > 0.7 ? 3 : 2;
+        const isH = Math.random() > 0.5;
+        const x = Math.floor(Math.random() * (GRID_SIZE - (isH ? len : 0)));
+        const y = Math.floor(Math.random() * (GRID_SIZE - (isH ? 0 : len)));
+
+        // 檢查重疊
+        let collision = false;
+        for (let i = 0; i < len; i++) {
+            if (grid[y + (isH ? 0 : i)][x + (isH ? i : 0)]) collision = true;
+        }
+        if (collision) continue;
+
+        // 決定方向並檢查「死對頭」
+        let dir = isH ? (Math.random() > 0.5 ? 'right' : 'left') : (Math.random() > 0.5 ? 'down' : 'up');
+        
+        if (isDeadlockRisk(x, y, len, dir, grid)) continue;
+
+        // 放置車輛
+        const v = { id: idCounter++, x, y, len, dir, color: colorsInUse[Math.floor(Math.random()*colorsInUse.length)], capacity: len, passengers: 0 };
+        vehicles.push(v);
+        for (let i = 0; i < len; i++) grid[y + (isH ? 0 : i)][x + (isH ? i : 0)] = v;
+    }
+    
+    vehicles.forEach(v => { for(let i=0; i<v.capacity; i++) queue.push(v.color); });
+    queue.sort(() => Math.random() - 0.5);
+    document.getElementById('msg').innerText = "點擊箭頭開出停車場！";
+}
+
+// 防止 A 車頭對著 B 車頭的檢查
+function isDeadlockRisk(x, y, len, dir, grid) {
+    if (dir === 'right' && x + len < GRID_SIZE) {
+        const target = grid[y][x + len];
+        if (target && target.dir === 'left') return true;
+    }
+    if (dir === 'left' && x > 0) {
+        const target = grid[y][x - 1];
+        if (target && target.dir === 'right') return true;
+    }
+    if (dir === 'down' && y + len < GRID_SIZE) {
+        const target = grid[y + len][x];
+        if (target && target.dir === 'up') return true;
+    }
+    if (dir === 'up' && y > 0) {
+        const target = grid[y - 1][x];
+        if (target && target.dir === 'down') return true;
+    }
+    return false;
+}
+
+function renderQueue() {
+    const v = document.getElementById('queue-viewport');
+    // 只更新必要的小人
+    v.querySelectorAll('.person').forEach(p => p.remove());
+    queue.forEach((c, i) => {
+        if (i >= PATH.length) return;
+        const p = document.createElement('div');
+        p.className = 'person';
+        p.style.backgroundColor = c;
+        p.style.left = PATH[i].x + 'px';
+        p.style.top = PATH[i].y + 'px';
+        p.innerText = i + 1; // 顯示序號
+        v.appendChild(p);
+    });
+}
+
+function renderVehicles() {
+    document.querySelectorAll('.vehicle').forEach(el => el.remove());
+    vehicles.forEach(v => {
+        const div = document.createElement('div');
+        div.className = 'vehicle';
+        const isH = (v.dir === 'left' || v.dir === 'right');
+        div.style.width = (isH ? v.len * 52 + (v.len-1)*4 : 52) + 'px';
+        div.style.height = (!isH ? v.len * 52 + (v.len-1)*4 : 52) + 'px';
+        div.style.left = (v.x * CELL + 8) + 'px';
+        div.style.top = (v.y * CELL + 8) + 'px';
+        div.style.backgroundColor = v.color;
+        div.innerText = { up: '▲', down: '▼', left: '◀', right: '▶' }[v.dir];
+        div.onclick = () => tryMove(v);
+        document.getElementById('grid').appendChild(div);
+    });
+}
+
+function tryMove(v) {
+    if (!gameActive) return;
+    let blocked = false;
+    if (v.dir === 'right') { for (let i = v.x + v.len; i < GRID_SIZE; i++) if (isOcc(i, v.y)) blocked = true; }
+    else if (v.dir === 'left') { for (let i = v.x - 1; i >= 0; i--) if (isOcc(i, v.y)) blocked = true; }
+    else if (v.dir === 'down') { for (let i = v.y + v.len; i < GRID_SIZE; i++) if (isOcc(v.x, i)) blocked = true; }
+    else if (v.dir === 'up') { for (let i = v.y - 1; i >= 0; i--) if (isOcc(v.x, i)) blocked = true; }
+
+    if (blocked) return showMsg("路徑被其他車擋住了！");
+
+    const slot = parkingLots.indexOf(null);
+    if (slot === -1) return showMsg("臨停區已滿，無法再出車！", true);
+
+    vehicles = vehicles.filter(item => item.id !== v.id);
+    parkingLots[slot] = { ...v, passengers: 0 };
+    renderVehicles();
+    updateLots();
+    processQueue();
+}
+
+function isOcc(x, y) {
+    return vehicles.some(v => {
+        const isH = (v.dir === 'left' || v.dir === 'right');
+        return isH ? (y === v.y && x >= v.x && x < v.x+v.len) : (x === v.x && y >= v.y && y < v.y+v.len);
+    });
+}
+
+function updateLots() {
+    const lots = document.querySelectorAll('.lot');
+    lots.forEach((lot, i) => {
+        lot.innerHTML = '';
+        if (parkingLots[i]) {
+            const v = parkingLots[i];
+            const div = document.createElement('div');
+            div.className = 'bus-in-lot';
+            div.style.backgroundColor = v.color;
+            div.innerHTML = `<span style="font-size:20px">${{up:'▲',down:'▼',left:'◀',right:'▶'}[v.dir]}</span>${v.passengers}/${v.capacity}`;
+            lot.appendChild(div);
+        }
+    });
+}
+
+function processQueue() {
+    if (queue.length === 0) return checkWin();
+    const nextC = queue[0];
+    const busIdx = parkingLots.findIndex(v => v && v.color === nextC && v.passengers < v.capacity);
+
+    if (busIdx !== -1) {
+        queue.shift();
+        parkingLots[busIdx].passengers++;
+        renderQueue();
+        updateLots();
+        
+        if (parkingLots[busIdx].passengers === parkingLots[busIdx].capacity) {
+            setTimeout(() => {
+                parkingLots[busIdx] = null;
+                updateLots();
+                processQueue();
+            }, 300);
+        } else {
+            setTimeout(processQueue, 150);
+        }
+    } else if (parkingLots.every(s => s !== null)) {
+        showMsg("臨停區塞爆了！失敗！", true);
+    }
+}
+
+function showMsg(t, die=false) {
+    document.getElementById('msg').innerText = t;
+    if(die) { gameActive = false; document.getElementById('msg').style.color = '#ff3b30'; }
+}
+
+function checkWin() {
+    if (queue.length === 0 && vehicles.length === 0) {
+        showMsg("🏆 完美！你完成了高難度挑戰！");
+    }
+}
+
+generateLevel();
+renderQueue();
+renderVehicles();
+</script>
+</body>
+</html>

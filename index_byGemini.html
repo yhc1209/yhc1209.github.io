@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的靈感收藏夾</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: var(--text-color);
+            font-size: 2rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .category-title {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
+            margin: 25px 0 15px 5px;
+            border-left: 4px solid #fff;
+            padding-left: 10px;
+        }
+
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .link-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text-color);
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            display: block;
+        }
+
+        .link-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-5px);
+            border-color: var(--glass-border);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .link-card span {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* 底部增加按鈕樣式 */
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>LINK HUB</h1>
+        <p style="color: rgba(255,255,255,0.7)">整理與收藏你的日常連結</p>
+    </header>
+
+    <!-- 分類區塊：工作工具 -->
+    <div class="category-title">常用工具</div>
+    <div class="link-grid">
+        <a href="https://github.com" target="_blank" class="link-card"><span>GitHub</span></a>
+        <a href="https://notion.so" target="_blank" class="link-card"><span>Notion</span></a>
+        <a href="https://canva.com" target="_blank" class="link-card"><span>Canva</span></a>
+        <a href="https://chatgpt.com" target="_blank" class="link-card"><span>ChatGPT</span></a>
+    </div>
+
+    <!-- 分類區塊：休閒娛樂 -->
+    <div class="category-title">社群休閒</div>
+    <div class="link-grid">
+        <a href="https://youtube.com" target="_blank" class="link-card"><span>YouTube</span></a>
+        <a href="https://instagram.com" target="_blank" class="link-card"><span>Instagram</span></a>
+        <a href="https://pinterest.com" target="_blank" class="link-card"><span>Pinterest</span></a>
+        <a href="https://medium.com" target="_blank" class="link-card"><span>Medium</span></a>
+    </div>
+
+    <!-- 分類區塊：學習資源 -->
+    <div class="category-title">學習與開發</div>
+    <div class="link-grid">
+        <a href="https://stackoverflow.com" target="_blank" class="link-card"><span>Stack Overflow</span></a>
+        <a href="https://w3schools.com" target="_blank" class="link-card"><span>W3Schools</span></a>
+        <a href="#" class="link-card"><span>+ 新增連結</span></a>
+    </div>
+
+    <div class="footer">
+        © 2026 個人連結收藏庫
+    </div>
+</div>
+
+</body>
+</html>
