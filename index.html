@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奇境傳送門</title>
+    <style>
+        :root {
+            --portal-color: #00f2ff;
+            --magic-purple: #7000ff;
+            --bg-dark: #050505;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: url('https://cur.cursors-4u.net'), auto;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Segoe UI', 'Heiti TC', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 動態星空背景 */
+        .stars-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a0b2e 0%, #050505 100%);
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* 主容器 */
+        .portal-frame {
+            position: relative;
+            width: 90%;
+            max-width: 900px;
+            padding: 50px;
+            background: rgba(10, 10, 20, 0.8);
+            border: 2px solid var(--magic-purple);
+            border-radius: 30px;
+            box-shadow: 0 0 20px var(--magic-purple), inset 0 0 20px var(--magic-purple);
+            backdrop-filter: blur(15px);
+            animation: floating 6s infinite ease-in-out;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin-bottom: 40px;
+            background: linear-gradient(to right, #00f2ff, #7000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(112, 0, 255, 0.5));
+        }
+
+        /* 連結網格 */
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+        }
+
+        .magic-link {
+            position: relative;
+            padding: 20px;
+            text-decoration: none;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 15px;
+            text-align: center;
+            overflow: hidden;
+            transition: 0.4s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .magic-link:hover {
+            border-color: var(--portal-color);
+            background: rgba(0, 242, 255, 0.1);
+            transform: scale(1.05) rotate(1deg);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+        }
+
+        /* 連結內部的符文裝飾 */
+        .magic-link::before {
+            content: "✧";
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--portal-color);
+            text-shadow: 0 0 5px var(--portal-color);
+        }
+
+        .link-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+        }
+
+        .link-desc {
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        /* 底部裝飾線 */
+        .decoration {
+            margin-top: 50px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--magic-purple), transparent);
+            position: relative;
+        }
+
+        .decoration::after {
+            content: "◈";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-dark);
+            padding: 0 10px;
+            color: var(--magic-purple);
+        }
+
+		/* 讓遊戲入口有特別的呼吸發光感 */
+		.magic-link[href="gamegame.html"] {
+			animation: portal-pulse 2s infinite alternate;
+			border-color: #ff00ff; /* 換成偏紫紅色的邊框，區別於其他連結 */
+		}
+
+		@keyframes portal-pulse {
+			from { box-shadow: 0 0 10px rgba(255, 0, 255, 0.2); }
+			to { box-shadow: 0 0 25px rgba(255, 0, 255, 0.6); }
+		}
+    </style>
+</head>
+<body>
+
+    <div class="stars-container" id="starField"></div>
+
+    <div class="portal-frame">
+        <h1>次元導航</h1>
+        
+        <div class="link-grid">
+            <a href="https://www.google.com" class="magic-link" target="_blank">
+                <span class="link-name">知識之泉</span>
+                <span class="link-desc">Google Search</span>
+            </a>
+            <a href="https://www.youtube.com" class="magic-link" target="_blank">
+                <span class="link-name">幻影之鏡</span>
+                <span class="link-desc">YouTube Video</span>
+            </a>
+            <a href="https://github.com" class="magic-link" target="_blank">
+                <span class="link-name">鑄造工坊</span>
+                <span class="link-desc">GitHub Codes</span>
+            </a>
+            <a href="https://openai.com" class="magic-link" target="_blank">
+                <span class="link-name">大賢者</span>
+                <span class="link-desc">Artificial Intelligence</span>
+            </a>
+            <a href="https://www.pinterest.com" class="magic-link" target="_blank">
+                <span class="link-name">靈感聖殿</span>
+                <span class="link-desc">Pinterest Design</span>
+            </a>
+			<a href="gamegame.html" class="magic-link">
+				<span class="link-name">幻象劇場</span>
+				<span class="link-desc">Interactive Games</span>
+			</a>
+        </div>
+
+        <div class="decoration"></div>
+        <p style="text-align: center; margin-top: 20px; font-size: 0.8rem; color: #555;">
+            穩定性：2026 虛擬核心運作中
+        </p>
+    </div>
+
+    <script>
+        // 生成隨機星空
+        const starField = document.getElementById('starField');
+        const starCount = 150;
+
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3 + 'px';
+            star.style.width = size;
+            star.style.height = size;
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.setProperty('--duration', Math.random() * 3 + 2 + 's');
+            starField.appendChild(star);
+        }
+    </script>
+</body>
+</html>

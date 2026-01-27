@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的遊戲收藏室</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: var(--accent);
+        }
+
+        /* 遊戲網格佈局 */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        /* 遊戲卡片樣式 */
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 卡片懸停效果 */
+        .game-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent);
+        }
+
+        /* 模擬遊戲預覽圖區域 */
+        .game-preview {
+            height: 160px;
+            background: linear-gradient(45deg, #334155, #475569);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+        }
+
+        .game-info {
+            padding: 20px;
+        }
+
+        .game-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .game-desc {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.5;
+        }
+
+        .status-tag {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+        }
+
+        footer {
+            margin-top: 60px;
+            color: #475569;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>GAME ARCADE</h1>
+        <p>一些AI做的遊戲</p>
+    </header>
+
+    <div class="game-grid">
+
+        <a href="gamepages/breakout.html" class="game-card">
+            <div class="game-preview">🧱</div>
+            <div class="game-info">
+                <span class="game-title">打磚塊</span>
+                <p class="game-desc">來把磚塊打完。</p>
+                <span class="status-tag">ver. 1.0</span>
+            </div>
+        </a>
+        <a href="gamepages/tictactoe.html" class="game-card">
+            <div class="game-preview">⭕❌</div>
+            <div class="game-info">
+                <span class="game-title">圈圈叉叉</span>
+                <p class="game-desc">兩個人來玩，一個當圈一個當叉。</p>
+                <span class="status-tag">ver. 1.0</span>
+            </div>
+        </a>
+        <a href="gamepages/busjam.html" class="game-card">
+            <div class="game-preview">🚗</div>
+            <div class="game-info">
+                <span class="game-title">移車載人</span>
+                <p class="game-desc">把人都載走。</p>
+                <span class="status-tag">ver. 0.5</span>
+            </div>
+        </a>
+        <a href="gamepages/minesweeper.html" class="game-card">
+            <div class="game-preview">🚩</div>
+            <div class="game-info">
+                <span class="game-title">踩地雷</span>
+                <p class="game-desc">不要踩到地雷。</p>
+                <span class="status-tag">ver. 1.0</span>
+            </div>
+        </a>
+        <a href="gamepages/guessNumber.html" class="game-card">
+            <div class="game-preview">🔢</div>
+            <div class="game-info">
+                <span class="game-title">猜數字</span>
+                <p class="game-desc">我都叫他1A2B。</p>
+                <span class="status-tag">ver. 1.0</span>
+            </div>
+        </a>
+        
+        <a href="#" class="game-card" style="opacity: 0.6; cursor: default;">
+            <div class="game-preview">⌛</div>
+            <div class="game-info">
+                <span class="game-title">復古方塊</span>
+                <p class="game-desc">經典的俄羅斯方塊玩法，重新調整了打擊感與特效。</p>
+                <span class="status-tag">更新中</span>
+            </div>
+        </a>
+
+        <a href="#" class="game-card" style="opacity: 0.6; cursor: default;">
+            <div class="game-preview">⌛</div>
+            <div class="game-info">
+                <span class="game-title">星際空戰</span>
+                <p class="game-desc">使用 Canvas 開發的橫向捲軸射擊遊戲。</p>
+                <span class="status-tag">更新中</span>
+            </div>
+        </a>
+
+        <a href="#" class="game-card" style="opacity: 0.6; cursor: default;">
+            <div class="game-preview">⌛</div>
+            <div class="game-info">
+                <span class="game-title">邏輯拼圖</span>
+                <p class="game-desc">考驗腦力的數字解謎，多達 50 個關卡。</p>
+                <span class="status-tag">更新中</span>
+            </div>
+        </a>
+
+    </div>
+
+    <footer>
+        Designed for My Static Games Collection
+    </footer>
+
+</body>
+</html>
