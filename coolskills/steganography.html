@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSB 圖片隱寫術工具</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; line-height: 1.6; background-color: #f4f4f9; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        canvas { max-width: 100%; height: auto; margin-top: 10px; border: 1px solid #ccc; display: none; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        img { max-width: 100%; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>LSB 圖片隱寫術</h1>
+    <p>透過修改像素顏色值的最後一位元，將文字藏進圖片中。</p>
+
+    <!-- 加密區塊 -->
+    <div class="section">
+        <h2>1. 隱藏訊息 (Encode)</h2>
+        <input type="file" id="uploadImg" accept="image/*"><br>
+        <textarea id="secretMsg" placeholder="輸入你想隱藏的文字..."></textarea><br>
+        <button onclick="encode()">生成隱碼圖片</button>
+        <div id="encodeResult">
+            <p>結果預覽：</p>
+            <img id="resultImg">
+            <br><a id="downloadLink" style="display:none;">下載隱碼圖片 (PNG)</a>
+        </div>
+    </div>
+
+    <!-- 解密區塊 -->
+    <div class="section">
+        <h2>2. 解析訊息 (Decode)</h2>
+        <input type="file" id="decodeImg" accept="image/*"><br>
+        <button onclick="decode()">提取隱藏文字</button>
+        <p>提取結果：</p>
+        <div id="decodedMsg" style="font-weight: bold; color: #d9534f; word-break: break-all;"></div>
+    </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 將字串轉為二進制
+    function strToBin(str) {
+        let output = "";
+        for (let i = 0; i < str.length; i++) {
+            let bin = str[i].charCodeAt(0).toString(2);
+            output += bin.padStart(16, "0"); // 使用 16 位元支援中文
+        }
+        return output + "0000000000000000"; // 結止符號
+    }
+
+    // 將二進制轉回字串
+    function binToStr(bin) {
+        let str = "";
+        for (let i = 0; i < bin.length; i += 16) {
+            let charCode = parseInt(bin.substr(i, 16), 2);
+            if (charCode === 0) break;
+            str += String.fromCharCode(charCode);
+        }
+        return str;
+    }
+
+    function encode() {
+        const fileInput = document.getElementById('uploadImg');
+        const text = document.getElementById('secretMsg').value;
+        if (!fileInput.files[0] || !text) return alert("請選擇圖片並輸入文字");
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+                const binMsg = strToBin(text);
+
+                if (binMsg.length > data.length * 0.75) {
+                    return alert("文字太多，圖片放不下！");
+                }
+
+                for (let i = 0; i < binMsg.length; i++) {
+                    // 修改 RGBA 中的 RGB，跳過 A (透明度)
+                    let dataIdx = Math.floor(i / 3) * 4 + (i % 3);
+                    data[dataIdx] = (data[dataIdx] & 0xFE) | parseInt(binMsg[i]);
+                }
+
+                ctx.putImageData(imgData, 0, 0);
+                const dataUrl = canvas.toDataURL("image/png");
+                document.getElementById('resultImg').src = dataUrl;
+                
+                const link = document.getElementById('downloadLink');
+                link.href = dataUrl;
+                link.download = "stego_image.png";
+                link.style.display = "inline-block";
+                link.innerText = "點此下載 PNG 檔案";
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+
+    function decode() {
+        const fileInput = document.getElementById('decodeImg');
+        if (!fileInput.files[0]) return alert("請上傳要解析的圖片");
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+                let binMsg = "";
+
+                for (let i = 0; i < data.length; i++) {
+                    if ((i + 1) % 4 === 0) continue; // 跳過 Alpha 通道
+                    binMsg += (data[i] & 1).toString();
+                    if (binMsg.length % 16 === 0 && binMsg.slice(-16) === "0000000000000000") break;
+                }
+
+                document.getElementById('decodedMsg').innerText = binToStr(binMsg);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+</script>
+
+</body>
+</html>

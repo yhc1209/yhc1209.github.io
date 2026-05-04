@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>503 Service Unavailable</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #666;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            transition: all 0.5s ease;
+        }
+
+        .container { text-align: center; }
+        
+        h1 { font-size: 72px; margin: 0; color: #444; }
+        p { font-size: 18px; }
+
+        /* 隱藏的按鈕：平時完全看不見 */
+        .secret-portal {
+            margin-top: 50px;
+            padding: 10px 20px;
+            border: 1px solid transparent;
+            color: transparent;
+            text-decoration: none;
+            cursor: default;
+            transition: all 0.3s ease;
+        }
+
+        /* 按住 Alt 鍵時的樣式 (由 JS 控制 class) */
+        body.alt-pressed .secret-portal {
+            color: #ff0000;
+            border-color: #ff0000;
+            box-shadow: 0 0 15px #ff0000;
+            cursor: pointer;
+            text-shadow: 0 0 5px #ff0000;
+        }
+
+        /* 駭客風格背景切換 */
+        body.hacked {
+            background-color: #000;
+            color: #0f0;
+            filter: hue-rotate(90deg);
+        }
+
+        #status-code { font-weight: bold; }
+    </style>
+</head>
+<body id="main-body">
+
+    <div class="container">
+        <h1 id="error-title">503</h1>
+        <p id="error-msg">系統維護中，請稍後再試。</p>
+        <div id="status-code">ERROR_CODE: 0x8004210B</div>
+        
+        <!-- 隱形傳送門 -->
+        <a href="coolskillsPortal.html" class="secret-portal" id="portal">
+            ACCESS_GATEWAY
+        </a>
+    </div>
+
+<script>
+    const targetUrl = "coolskillsPortal.html";
+    let inputBuffer = "";
+
+    // 1. 密碼觸發：輸入 "hack"
+    document.addEventListener('keydown', (e) => {
+        inputBuffer += e.key.toLowerCase();
+        inputBuffer = inputBuffer.slice(-4);
+
+        if (inputBuffer === "hack") {
+            triggerHackedEffect();
+        }
+
+        // 2. 視覺暗示：偵測 Alt 鍵
+        if (e.altKey) {
+            document.getElementById('main-body').classList.add('alt-pressed');
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (!e.altKey) {
+            document.getElementById('main-body').classList.remove('alt-pressed');
+        }
+    });
+
+    // 進入特效
+    function triggerHackedEffect() {
+        document.body.classList.add('hacked');
+        document.getElementById('error-title').innerText = "ACCESS GRANTED";
+        document.getElementById('error-msg').innerText = "正在繞過防火牆...";
+        
+        setTimeout(() => {
+            window.location.href = targetUrl;
+        }, 1500);
+    }
+
+    // 3. 控制台驚喜
+    console.log("%c [SYSTEM] 檢測到非法訪問 ", "color: red; font-size: 20px; background: black;");
+    console.log("輸入 %cunlock()%c 以取得臨時授權", "color: cyan", "color: inherit");
+
+    window.unlock = function() {
+        console.log("授權成功。");
+        triggerHackedEffect();
+        return "Redirecting...";
+    };
+</script>
+</body>
+</html>

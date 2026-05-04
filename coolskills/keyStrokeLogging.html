@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>安全性更新測試</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: 'Courier New', monospace; overflow: hidden; }
+        .login-box {
+            width: 300px; margin: 100px auto; padding: 20px;
+            border: 1px solid #0f0; text-align: center; background: #111;
+        }
+        input { background: #222; border: 1px solid #0f0; color: #0f0; padding: 5px; margin: 10px 0; width: 100%; }
+        button { background: #0f0; color: #000; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
+        #log-console {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 150px;
+            background: rgba(0, 20, 0, 0.9); border-top: 1px solid #0f0;
+            padding: 10px; font-size: 12px; overflow-y: scroll;
+        }
+        .warning { color: yellow; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+
+<div class="login-box" id="fakeLogin">
+    <h3>系統已鎖定</h3>
+    <p class="warning">請輸入密碼以繼續更新</p>
+    <input type="text" id="username" placeholder="帳號" autocomplete="off">
+    <input type="password" id="password" placeholder="密碼" autocomplete="off">
+    <button onclick="goFullscreen()">解鎖</button>
+</div>
+
+<div id="log-console">
+    <div>[系統訊息] 監聽器啟動中...</div>
+</div>
+
+<script>
+    const consoleBox = document.getElementById('log-console');
+    
+    // 側錄函數
+    function log(msg) {
+        const div = document.createElement('div');
+        div.innerText = `[LOG] ${new Date().toLocaleTimeString()}: ${msg}`;
+        consoleBox.appendChild(div);
+        consoleBox.scrollTop = consoleBox.scrollHeight;
+    }
+
+    // 監聽全網頁的按鍵
+    document.addEventListener('keydown', (e) => {
+        // 排除掉單純的控制鍵
+        if (e.key.length === 1) {
+            log(`使用者按下了: ${e.key}`);
+        }
+    });
+
+    // 偽裝全螢幕：讓使用者以為跳出了瀏覽器
+    function goFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        }
+        alert("系統更新失敗，請檢查網路連線。");
+        log("警告：已誘導使用者進入全螢幕模式，信任感提升。");
+    }
+
+    // 針對輸入框的特定側錄
+    document.getElementById('password').addEventListener('input', (e) => {
+        // 在真實駭客攻擊中，這裡會用 fetch() 把資料傳到遠端伺服器
+        console.log("正在截取密碼片段...", e.target.value);
+    });
+</script>
+
+</body>
+</html>

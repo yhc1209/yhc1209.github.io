@@ -162,6 +162,16 @@
 			border-color: #ff00ff; /* 換成偏紫紅色的邊框，區別於其他連結 */
 		}
 
+        /* 大賢者壞掉 */
+		.magic-link[href="page5.html"] {
+            color: #ffffff33;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 242, 255, 0.15);
+		}
+        .abnormal {
+            color: #aaaaaa33;
+        }
+
 		@keyframes portal-pulse {
 			from { box-shadow: 0 0 10px rgba(255, 0, 255, 0.2); }
 			to { box-shadow: 0 0 25px rgba(255, 0, 255, 0.6); }
@@ -188,9 +198,9 @@
                 <span class="link-name">鑄造工坊</span>
                 <span class="link-desc">GitHub Codes</span>
             </a>
-            <a href="https://openai.com" class="magic-link" target="_blank">
+            <a href="page5.html" class="magic-link">
                 <span class="link-name">大賢者</span>
-                <span class="link-desc">Artificial Intelligence</span>
+                <span class="link-desc abnormal">Artificial Intelligence</span>
             </a>
             <a href="https://www.pinterest.com" class="magic-link" target="_blank">
                 <span class="link-name">靈感聖殿</span>
