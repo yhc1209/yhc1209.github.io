@@ -1,0 +1,1396 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>逐格動畫製作工具 - Stop Motion Animation Studio</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        overflow: hidden;
+      }
+
+      /* 棋盤格透明背景 */
+      .chessboard {
+        background-image:
+          linear-gradient(45deg, #1e293b 25%, transparent 25%),
+          linear-gradient(-45deg, #1e293b 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #1e293b 75%),
+          linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+        background-size: 20px 20px;
+        background-position:
+          0 0,
+          0 10px,
+          10px -10px,
+          -10px 0;
+        background-color: #0f172a;
+      }
+
+      /* Canvas 容器 */
+      #canvasContainer {
+        overflow: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Canvas 元素 */
+      #canvas {
+        border: 2px solid #334155;
+        cursor: crosshair;
+        display: block;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      }
+
+      /* 工具按鈕樣式 */
+      .tool-btn {
+        transition: all 0.2s ease;
+        border-radius: 0.375rem;
+      }
+
+      .tool-btn:hover:not(:disabled) {
+        background-color: #1e40af;
+        transform: translateY(-2px);
+      }
+
+      .tool-btn.active {
+        background-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+      }
+
+      .tool-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* 幀縮圖樣式 */
+      .frame-thumbnail {
+        border: 2px solid #334155;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #1e293b;
+        position: relative;
+        flex-shrink: 0;
+      }
+
+      .frame-thumbnail:hover {
+        border-color: #64748b;
+        transform: scale(1.05);
+      }
+
+      .frame-thumbnail.active {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+      }
+
+      /* 滑桿樣式 */
+      input[type="range"] {
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: #334155;
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #3b82f6;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      input[type="range"]::-webkit-slider-thumb:hover {
+        background: #60a5fa;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #3b82f6;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s ease;
+      }
+
+      input[type="range"]::-moz-range-thumb:hover {
+        background: #60a5fa;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3);
+      }
+
+      /* 模態對話框 */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        animation: fadeIn 0.3s ease;
+      }
+
+      .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .modal-content {
+        background: #1e293b;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        border: 2px solid #334155;
+        max-width: 400px;
+        width: 90%;
+        animation: slideUp 0.3s ease;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* 顏色選擇器 */
+      input[type="color"] {
+        width: 100%;
+        height: 50px;
+        border: 2px solid #334155;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+      }
+
+      input[type="color"]:hover {
+        border-color: #64748b;
+      }
+
+      /* 文字輸入 */
+      input[type="number"] {
+        background: #0f172a;
+        border: 2px solid #334155;
+        color: #e2e8f0;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        transition: border-color 0.2s ease;
+      }
+
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      /* 通知提示 */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #1e40af;
+        color: #fff;
+        padding: 1rem 1.5rem;
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        animation: slideInRight 0.3s ease;
+        z-index: 999;
+      }
+
+      @keyframes slideInRight {
+        from {
+          transform: translateX(400px);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      /* 工具提示 */
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 120px;
+        background-color: #0f172a;
+        color: #e2e8f0;
+        text-align: center;
+        border-radius: 0.375rem;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -60px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.875rem;
+        border: 1px solid #334155;
+        white-space: nowrap;
+      }
+
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="flex h-screen bg-slate-900 text-slate-100">
+      <!-- 左側工具欄 -->
+      <div
+        class="w-20 bg-slate-800 border-r border-slate-700 flex flex-col items-center py-4 gap-2 overflow-y-auto"
+      >
+        <!-- 工具按鈕 -->
+        <div class="tooltip">
+          <button
+            id="toolPencil"
+            class="tool-btn active p-3 bg-slate-700 text-white rounded"
+            title="鉛筆"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
+              ></path>
+            </svg>
+          </button>
+          <span class="tooltiptext">鉛筆 (P)</span>
+        </div>
+
+        <div class="tooltip">
+          <button
+            id="toolEraser"
+            class="tool-btn p-3 bg-slate-700 text-white rounded"
+            title="橡皮擦"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l9.6-9.6a1 1 0 0 1 1.4 0l4.3 4.3a1 1 0 0 1 0 1.4L8.4 21a1 1 0 0 1-1.4 0z"
+              ></path>
+              <line x1="20" y1="4" x2="4" y2="20"></line>
+            </svg>
+          </button>
+          <span class="tooltiptext">橡皮擦 (E)</span>
+        </div>
+
+        <div class="tooltip">
+          <button
+            id="toolBucket"
+            class="tool-btn p-3 bg-slate-700 text-white rounded"
+            title="油漆桶"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M5.5 13c0 1.105.672 2.084 1.174 3.1.38.715.872 1.556 1.735 2.264H6a2 2 0 0 1-2-2c0-.866.269-1.667.749-2.364z"
+              ></path>
+              <path d="M15 13v-3H9V6h8a2 2 0 0 1 2 2v5z"></path>
+            </svg>
+          </button>
+          <span class="tooltiptext">油漆桶 (B)</span>
+        </div>
+
+        <div class="border-t border-slate-700 my-2 w-12"></div>
+
+        <!-- 洋蔥皮切換 -->
+        <div class="tooltip">
+          <button
+            id="toggleOnionSkin"
+            class="tool-btn p-3 bg-slate-700 text-white rounded"
+            title="洋蔥皮"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+              <path d="M11 8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"></path>
+            </svg>
+          </button>
+          <span class="tooltiptext">洋蔥皮 (O)</span>
+        </div>
+
+        <div class="border-t border-slate-700 my-2 w-12"></div>
+
+        <!-- 播放控制 -->
+        <div class="tooltip">
+          <button
+            id="playButton"
+            class="tool-btn p-3 bg-green-700 text-white rounded"
+            title="播放"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </button>
+          <span class="tooltiptext">播放 (Space)</span>
+        </div>
+
+        <div class="border-t border-slate-700 my-2 w-12"></div>
+
+        <!-- 設定和重設 -->
+        <div class="tooltip">
+          <button
+            id="settingsButton"
+            class="tool-btn p-3 bg-slate-700 text-white rounded"
+            title="設定"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="1"></circle>
+              <path
+                d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24"
+              ></path>
+            </svg>
+          </button>
+          <span class="tooltiptext">畫布設定</span>
+        </div>
+
+        <div class="tooltip">
+          <button
+            id="resetButton"
+            class="tool-btn p-3 bg-red-700 text-white rounded"
+            title="重設"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5c0-3.866 3.134-7 7-7 1.657 0 3.185.585 4.395 1.56"
+              ></path>
+              <path
+                d="M22 12.5c0 3.866-3.134 7-7 7-1.657 0-3.185-.585-4.395-1.56"
+              ></path>
+            </svg>
+          </button>
+          <span class="tooltiptext">重設專案</span>
+        </div>
+      </div>
+
+      <!-- 主要內容區域 -->
+      <div class="flex-1 flex flex-col">
+        <!-- 頂部工具欄 -->
+        <div
+          class="bg-slate-800 border-b border-slate-700 p-4 flex items-center gap-6 flex-wrap"
+        >
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-300">顏色：</label>
+            <input
+              type="color"
+              id="colorPicker"
+              value="#ffffff"
+              class="w-12 h-10 cursor-pointer"
+            />
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-300">線條粗細：</label>
+            <input
+              type="range"
+              id="strokeWidth"
+              min="1"
+              max="50"
+              value="3"
+              class="w-32"
+            />
+            <span id="strokeWidthValue" class="text-sm text-slate-400 w-8"
+              >3 px</span
+            >
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-300"
+              >速度 (FPS)：</label
+            >
+            <input
+              type="range"
+              id="fpsSlider"
+              min="1"
+              max="24"
+              value="12"
+              class="w-32"
+            />
+            <span id="fpsValue" class="text-sm text-slate-400 w-10"
+              >12 fps</span
+            >
+          </div>
+
+          <div class="ml-auto flex items-center gap-2">
+            <span id="frameInfo" class="text-sm text-slate-400">幀: 1/1</span>
+          </div>
+        </div>
+
+        <!-- 畫布容器 -->
+        <div id="canvasContainer" class="flex-1 chessboard">
+          <canvas
+            id="canvas"
+            width="500"
+            height="500"
+            class="shadow-lg"
+          ></canvas>
+        </div>
+
+        <!-- 底部時間軸 -->
+        <div
+          class="bg-slate-800 border-t border-slate-700 p-4 flex items-center gap-4 overflow-x-auto"
+        >
+          <button
+            id="addFrameButton"
+            class="tool-btn px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap flex-shrink-0"
+          >
+            + 新增幀
+          </button>
+
+          <button
+            id="deleteFrameButton"
+            class="tool-btn px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 whitespace-nowrap flex-shrink-0"
+          >
+            刪除幀
+          </button>
+
+          <button
+            id="duplicateFrameButton"
+            class="tool-btn px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700 whitespace-nowrap flex-shrink-0"
+          >
+            複製幀
+          </button>
+
+          <div class="border-l border-slate-700 h-8 flex-shrink-0"></div>
+
+          <div id="framesList" class="flex gap-2 overflow-x-auto pb-2 flex-1">
+            <!-- 幀縮圖會動態插入此處 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 畫布設定模態 -->
+    <div id="settingsModal" class="modal">
+      <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-6 text-slate-100">畫布設定</h2>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-300 mb-2"
+            >寬度 (px):</label
+          >
+          <input
+            type="number"
+            id="canvasWidth"
+            min="100"
+            max="2000"
+            value="500"
+            class="w-full px-3 py-2"
+          />
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-slate-300 mb-2"
+            >高度 (px):</label
+          >
+          <input
+            type="number"
+            id="canvasHeight"
+            min="100"
+            max="2000"
+            value="500"
+            class="w-full px-3 py-2"
+          />
+        </div>
+
+        <div class="flex gap-3">
+          <button
+            id="confirmSettingsButton"
+            class="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            確認
+          </button>
+          <button
+            id="cancelSettingsButton"
+            class="flex-1 px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600"
+          >
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 重設確認模態 -->
+    <div id="resetConfirmModal" class="modal">
+      <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-4 text-slate-100">確認重設</h2>
+        <p class="text-slate-300 mb-6">
+          此操作將清除所有已保存的動畫和幀。此操作無法復原。
+        </p>
+
+        <div class="flex gap-3">
+          <button
+            id="confirmResetButton"
+            class="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            確認清空
+          </button>
+          <button
+            id="cancelResetButton"
+            class="flex-1 px-4 py-2 bg-slate-700 text-white rounded hover:bg-slate-600"
+          >
+            取消
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ==================== 應用程式狀態管理 ====================
+      const AppState = {
+        // 畫布配置
+        canvasWidth: 500,
+        canvasHeight: 500,
+
+        // 繪圖工具狀態
+        currentTool: "pencil", // pencil, eraser, bucket
+        currentColor: "#ffffff",
+        strokeWidth: 3,
+
+        // 幀管理
+        frames: [],
+        currentFrameIndex: 0,
+
+        // 播放控制
+        isPlaying: false,
+        fps: 12,
+        playbackTimer: null,
+
+        // 洋蔥皮
+        onionSkinEnabled: false,
+
+        // IndexedDB
+        db: null,
+        projectName: "animation_project_v1",
+      };
+
+      // ==================== DOM 元素參考 ====================
+      const DOM = {
+        canvas: document.getElementById("canvas"),
+        ctx: null,
+        colorPicker: document.getElementById("colorPicker"),
+        strokeWidthInput: document.getElementById("strokeWidth"),
+        strokeWidthValue: document.getElementById("strokeWidthValue"),
+        fpsSlider: document.getElementById("fpsSlider"),
+        fpsValue: document.getElementById("fpsValue"),
+        frameInfo: document.getElementById("frameInfo"),
+        framesList: document.getElementById("framesList"),
+        addFrameButton: document.getElementById("addFrameButton"),
+        deleteFrameButton: document.getElementById("deleteFrameButton"),
+        duplicateFrameButton: document.getElementById("duplicateFrameButton"),
+        playButton: document.getElementById("playButton"),
+        toggleOnionSkinButton: document.getElementById("toggleOnionSkin"),
+        settingsButton: document.getElementById("settingsButton"),
+        resetButton: document.getElementById("resetButton"),
+        settingsModal: document.getElementById("settingsModal"),
+        canvasWidthInput: document.getElementById("canvasWidth"),
+        canvasHeightInput: document.getElementById("canvasHeight"),
+        confirmSettingsButton: document.getElementById("confirmSettingsButton"),
+        cancelSettingsButton: document.getElementById("cancelSettingsButton"),
+        resetConfirmModal: document.getElementById("resetConfirmModal"),
+        confirmResetButton: document.getElementById("confirmResetButton"),
+        cancelResetButton: document.getElementById("cancelResetButton"),
+        toolPencil: document.getElementById("toolPencil"),
+        toolEraser: document.getElementById("toolEraser"),
+        toolBucket: document.getElementById("toolBucket"),
+        canvasContainer: document.getElementById("canvasContainer"),
+      };
+
+      // 取得 2D 繪圖上下文
+      DOM.ctx = DOM.canvas.getContext("2d", { willReadFrequently: true });
+
+      // ==================== 繪圖狀態 ====================
+      const DrawingState = {
+        isDrawing: false,
+        lastX: 0,
+        lastY: 0,
+      };
+
+      // ==================== IndexedDB 初始化 ====================
+      function initDB() {
+        return new Promise((resolve, reject) => {
+          const request = indexedDB.open("AnimationStudio", 1);
+
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            AppState.db = request.result;
+            resolve();
+          };
+
+          request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains("projects")) {
+              db.createObjectStore("projects", { keyPath: "id" });
+            }
+          };
+        });
+      }
+
+      // 從 IndexedDB 讀取專案數據
+      function loadProjectFromDB() {
+        return new Promise((resolve, reject) => {
+          const transaction = AppState.db.transaction(["projects"], "readonly");
+          const store = transaction.objectStore("projects");
+          const request = store.get(AppState.projectName);
+
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => {
+            const data = request.result;
+            if (data) {
+              resolve(data);
+            } else {
+              resolve(null);
+            }
+          };
+        });
+      }
+
+      // 保存專案數據到 IndexedDB
+      function saveProjectToDB() {
+        return new Promise((resolve, reject) => {
+          const transaction = AppState.db.transaction(
+            ["projects"],
+            "readwrite",
+          );
+          const store = transaction.objectStore("projects");
+
+          // 將幀轉換為可存儲的格式（Base64）
+          const framesData = AppState.frames.map((frameCanvas) => {
+            return frameCanvas.toDataURL("image/png");
+          });
+
+          const projectData = {
+            id: AppState.projectName,
+            timestamp: new Date().toISOString(),
+            canvasWidth: AppState.canvasWidth,
+            canvasHeight: AppState.canvasHeight,
+            frames: framesData,
+            currentFrameIndex: AppState.currentFrameIndex,
+            fps: AppState.fps,
+          };
+
+          const request = store.put(projectData);
+
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve();
+        });
+      }
+
+      // 從 IndexedDB 恢復數據
+      async function restoreProjectFromDB() {
+        try {
+          const data = await loadProjectFromDB();
+          if (data) {
+            // 恢復畫布尺寸
+            AppState.canvasWidth = data.canvasWidth;
+            AppState.canvasHeight = data.canvasHeight;
+            AppState.fps = data.fps;
+            DOM.fpsSlider.value = AppState.fps;
+            DOM.fpsValue.textContent = `${AppState.fps} fps`;
+
+            // 重新設定畫布
+            resizeCanvas(AppState.canvasWidth, AppState.canvasHeight);
+
+            // 恢復幀
+            AppState.frames = [];
+            for (const frameDataUrl of data.frames) {
+              const img = new Image();
+              img.onload = () => {
+                const frameCanvas = document.createElement("canvas");
+                frameCanvas.width = AppState.canvasWidth;
+                frameCanvas.height = AppState.canvasHeight;
+                const frameCtx = frameCanvas.getContext("2d");
+                frameCtx.drawImage(img, 0, 0);
+                AppState.frames.push(frameCanvas);
+
+                // 所有幀載入完成後
+                if (AppState.frames.length === data.frames.length) {
+                  AppState.currentFrameIndex = Math.min(
+                    data.currentFrameIndex,
+                    AppState.frames.length - 1,
+                  );
+                  renderFrame();
+                  updateFramesList();
+                  updateFrameInfo();
+                  showToast("成功恢復之前的專案");
+                }
+              };
+              img.src = frameDataUrl;
+            }
+          } else {
+            // 沒有之前的數據，創建新的空白幀
+            createNewFrame();
+            showToast("已建立新專案");
+          }
+        } catch (error) {
+          console.error("恢復數據失敗:", error);
+          createNewFrame();
+        }
+      }
+
+      // 清空 IndexedDB 中的數據
+      function clearProjectFromDB() {
+        return new Promise((resolve, reject) => {
+          const transaction = AppState.db.transaction(
+            ["projects"],
+            "readwrite",
+          );
+          const store = transaction.objectStore("projects");
+          const request = store.delete(AppState.projectName);
+
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve();
+        });
+      }
+
+      // ==================== 畫布操作 ====================
+      function resizeCanvas(width, height) {
+        AppState.canvasWidth = Math.max(100, Math.min(2000, width));
+        AppState.canvasHeight = Math.max(100, Math.min(2000, height));
+
+        DOM.canvas.width = AppState.canvasWidth;
+        DOM.canvas.height = AppState.canvasHeight;
+
+        renderFrame();
+      }
+
+      function createNewFrame() {
+        const newFrame = document.createElement("canvas");
+        newFrame.width = AppState.canvasWidth;
+        newFrame.height = AppState.canvasHeight;
+        AppState.frames.push(newFrame);
+        AppState.currentFrameIndex = AppState.frames.length - 1;
+        renderFrame();
+        updateFramesList();
+        updateFrameInfo();
+        saveProjectToDB();
+      }
+
+      function deleteCurrentFrame() {
+        if (AppState.frames.length <= 1) {
+          showToast("至少需要保留一幀");
+          return;
+        }
+
+        AppState.frames.splice(AppState.currentFrameIndex, 1);
+        AppState.currentFrameIndex = Math.max(
+          0,
+          AppState.currentFrameIndex - 1,
+        );
+        renderFrame();
+        updateFramesList();
+        updateFrameInfo();
+        saveProjectToDB();
+      }
+
+      function duplicateCurrentFrame() {
+        const currentFrame = AppState.frames[AppState.currentFrameIndex];
+        const duplicatedFrame = document.createElement("canvas");
+        duplicatedFrame.width = currentFrame.width;
+        duplicatedFrame.height = currentFrame.height;
+        const ctx = duplicatedFrame.getContext("2d");
+        ctx.drawImage(currentFrame, 0, 0);
+
+        AppState.frames.splice(
+          AppState.currentFrameIndex + 1,
+          0,
+          duplicatedFrame,
+        );
+        AppState.currentFrameIndex += 1;
+        renderFrame();
+        updateFramesList();
+        updateFrameInfo();
+        saveProjectToDB();
+      }
+
+      // ==================== 繪圖渲染 ====================
+      function renderFrame() {
+        const ctx = DOM.ctx;
+        const currentFrame = AppState.frames[AppState.currentFrameIndex];
+
+        // 清除畫布
+        ctx.clearRect(0, 0, DOM.canvas.width, DOM.canvas.height);
+
+        // 繪製洋蔥皮（前一幀，半透明）
+        if (AppState.onionSkinEnabled && AppState.currentFrameIndex > 0) {
+          const prevFrame = AppState.frames[AppState.currentFrameIndex - 1];
+          ctx.globalAlpha = 0.5;
+          ctx.drawImage(prevFrame, 0, 0);
+          ctx.globalAlpha = 1.0;
+        }
+
+        // 繪製當前幀
+        if (currentFrame) {
+          ctx.drawImage(currentFrame, 0, 0);
+        }
+      }
+
+      // ==================== 繪圖工具 ====================
+
+      // 平滑線條算法：使用二次貝茲曲線連接滑鼠點，實現流暢的線條
+      function drawLine(fromX, fromY, toX, toY) {
+        const ctx =
+          AppState.frames[AppState.currentFrameIndex].getContext("2d");
+
+        ctx.strokeStyle = AppState.currentColor;
+        ctx.lineWidth = AppState.strokeWidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.globalAlpha = 1.0;
+
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        // 使用二次貝茲曲線連接兩點，確保線條平滑
+        ctx.quadraticCurveTo(
+          fromX,
+          fromY,
+          (fromX + toX) / 2,
+          (fromY + toY) / 2,
+        );
+        ctx.stroke();
+
+        renderFrame();
+      }
+
+      // 橡皮擦
+      function erase(fromX, fromY, toX, toY) {
+        const ctx =
+          AppState.frames[AppState.currentFrameIndex].getContext("2d");
+
+        // 使用 destination-out 複合操作清除像素
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+        ctx.lineWidth = AppState.strokeWidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        // 繪製平滑的橡皮擦線條
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.quadraticCurveTo(
+          fromX,
+          fromY,
+          (fromX + toX) / 2,
+          (fromY + toY) / 2,
+        );
+        ctx.stroke();
+
+        // 恢復預設複合操作
+        ctx.globalCompositeOperation = "source-over";
+
+        renderFrame();
+      }
+
+      // 洪水填充算法（油漆桶工具）
+      // 使用廣度優先搜索 (BFS) 實現洪水填充
+      function floodFill(x, y, fillColor) {
+        const ctx =
+          AppState.frames[AppState.currentFrameIndex].getContext("2d");
+        const imageData = ctx.getImageData(
+          0,
+          0,
+          DOM.canvas.width,
+          DOM.canvas.height,
+        );
+        const data = imageData.data;
+
+        // 轉換填充顏色
+        const fillRGB = hexToRGB(fillColor);
+        const fillR = fillRGB.r;
+        const fillG = fillRGB.g;
+        const fillB = fillRGB.b;
+
+        // 獲取點擊位置的顏色
+        const pixelIndex =
+          (Math.floor(y) * DOM.canvas.width + Math.floor(x)) * 4;
+        const originalR = data[pixelIndex];
+        const originalG = data[pixelIndex + 1];
+        const originalB = data[pixelIndex + 2];
+        const originalA = data[pixelIndex + 3];
+
+        // 如果點擊位置已是填充色，則跳過
+        if (fillR === originalR && fillG === originalG && fillB === originalB) {
+          return;
+        }
+
+        // BFS 洪水填充
+        const queue = [[Math.floor(x), Math.floor(y)]];
+        const visited = new Set();
+
+        while (queue.length > 0) {
+          const [px, py] = queue.shift();
+          const key = `${px},${py}`;
+
+          if (visited.has(key)) continue;
+          visited.add(key);
+
+          // 邊界檢查
+          if (
+            px < 0 ||
+            px >= DOM.canvas.width ||
+            py < 0 ||
+            py >= DOM.canvas.height
+          )
+            continue;
+
+          const idx = (py * DOM.canvas.width + px) * 4;
+
+          // 檢查該像素是否與原始顏色匹配
+          if (
+            data[idx] === originalR &&
+            data[idx + 1] === originalG &&
+            data[idx + 2] === originalB &&
+            data[idx + 3] === originalA
+          ) {
+            // 填充像素
+            data[idx] = fillR;
+            data[idx + 1] = fillG;
+            data[idx + 2] = fillB;
+            data[idx + 3] = 255;
+
+            // 加入相鄰的四個像素到隊列（上、下、左、右）
+            queue.push([px + 1, py]);
+            queue.push([px - 1, py]);
+            queue.push([px, py + 1]);
+            queue.push([px, py - 1]);
+          }
+        }
+
+        // 將修改後的 ImageData 應用回畫布
+        ctx.putImageData(imageData, 0, 0);
+        renderFrame();
+      }
+
+      // 十六進制顏色轉 RGB
+      function hexToRGB(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return { r, g, b };
+      }
+
+      // ==================== 播放控制 ====================
+      function startPlayback() {
+        if (AppState.isPlaying) return;
+
+        AppState.isPlaying = true;
+        DOM.playButton.style.backgroundColor = "#059669";
+
+        let currentPlayingFrame = 0;
+        const frameDelay = 1000 / AppState.fps;
+
+        function playNextFrame() {
+          if (!AppState.isPlaying) return;
+
+          AppState.currentFrameIndex = currentPlayingFrame;
+          renderFrame();
+          updateFramesList();
+          updateFrameInfo();
+
+          currentPlayingFrame =
+            (currentPlayingFrame + 1) % AppState.frames.length;
+          AppState.playbackTimer = setTimeout(playNextFrame, frameDelay);
+        }
+
+        AppState.playbackTimer = setTimeout(playNextFrame, frameDelay);
+      }
+
+      function stopPlayback() {
+        if (!AppState.isPlaying) return;
+
+        AppState.isPlaying = false;
+        clearTimeout(AppState.playbackTimer);
+        DOM.playButton.style.backgroundColor = "#16a34a";
+      }
+
+      // ==================== UI 事件處理 ====================
+
+      // 工具選擇
+      DOM.toolPencil.addEventListener("click", () => {
+        AppState.currentTool = "pencil";
+        updateToolUI();
+      });
+
+      DOM.toolEraser.addEventListener("click", () => {
+        AppState.currentTool = "eraser";
+        updateToolUI();
+      });
+
+      DOM.toolBucket.addEventListener("click", () => {
+        AppState.currentTool = "bucket";
+        updateToolUI();
+      });
+
+      function updateToolUI() {
+        document.querySelectorAll(".tool-btn").forEach((btn) => {
+          if (
+            btn.id === "toolPencil" ||
+            btn.id === "toolEraser" ||
+            btn.id === "toolBucket" ||
+            btn.id === "toggleOnionSkin"
+          ) {
+            btn.classList.remove("active");
+          }
+        });
+
+        if (AppState.currentTool === "pencil") {
+          DOM.toolPencil.classList.add("active");
+        } else if (AppState.currentTool === "eraser") {
+          DOM.toolEraser.classList.add("active");
+        } else if (AppState.currentTool === "bucket") {
+          DOM.toolBucket.classList.add("active");
+        }
+      }
+
+      // 顏色選擇
+      DOM.colorPicker.addEventListener("change", (e) => {
+        AppState.currentColor = e.target.value;
+      });
+
+      // 線條粗細
+      DOM.strokeWidthInput.addEventListener("input", (e) => {
+        AppState.strokeWidth = parseInt(e.target.value);
+        DOM.strokeWidthValue.textContent = `${AppState.strokeWidth} px`;
+      });
+
+      // FPS 調整
+      DOM.fpsSlider.addEventListener("input", (e) => {
+        AppState.fps = parseInt(e.target.value);
+        DOM.fpsValue.textContent = `${AppState.fps} fps`;
+      });
+
+      // 洋蔥皮切換
+      DOM.toggleOnionSkinButton.addEventListener("click", () => {
+        AppState.onionSkinEnabled = !AppState.onionSkinEnabled;
+        DOM.toggleOnionSkinButton.style.backgroundColor =
+          AppState.onionSkinEnabled ? "#1e40af" : "#1e293b";
+        renderFrame();
+        showToast(AppState.onionSkinEnabled ? "洋蔥皮已開啟" : "洋蔥皮已關閉");
+      });
+
+      // 播放按鈕
+      DOM.playButton.addEventListener("click", () => {
+        if (AppState.isPlaying) {
+          stopPlayback();
+        } else {
+          startPlayback();
+        }
+      });
+
+      // 幀操作
+      DOM.addFrameButton.addEventListener("click", createNewFrame);
+      DOM.deleteFrameButton.addEventListener("click", deleteCurrentFrame);
+      DOM.duplicateFrameButton.addEventListener("click", duplicateCurrentFrame);
+
+      // 設定按鈕
+      DOM.settingsButton.addEventListener("click", () => {
+        DOM.canvasWidthInput.value = AppState.canvasWidth;
+        DOM.canvasHeightInput.value = AppState.canvasHeight;
+        DOM.settingsModal.classList.add("show");
+      });
+
+      DOM.confirmSettingsButton.addEventListener("click", () => {
+        const newWidth = parseInt(DOM.canvasWidthInput.value);
+        const newHeight = parseInt(DOM.canvasHeightInput.value);
+
+        // 驗證輸入
+        if (
+          isNaN(newWidth) ||
+          isNaN(newHeight) ||
+          newWidth < 100 ||
+          newHeight < 100 ||
+          newWidth > 2000 ||
+          newHeight > 2000
+        ) {
+          showToast("請輸入有效的尺寸（100-2000 px）");
+          return;
+        }
+
+        // 如果尺寸改變，需要調整所有現有幀
+        if (
+          newWidth !== AppState.canvasWidth ||
+          newHeight !== AppState.canvasHeight
+        ) {
+          const oldWidth = AppState.canvasWidth;
+          const oldHeight = AppState.canvasHeight;
+
+          AppState.frames.forEach((frame) => {
+            const newFrame = document.createElement("canvas");
+            newFrame.width = newWidth;
+            newFrame.height = newHeight;
+            const ctx = newFrame.getContext("2d");
+            ctx.drawImage(frame, 0, 0);
+
+            frame.width = newWidth;
+            frame.height = newHeight;
+            const origCtx = frame.getContext("2d");
+            origCtx.drawImage(newFrame, 0, 0);
+          });
+
+          resizeCanvas(newWidth, newHeight);
+          saveProjectToDB();
+        }
+
+        DOM.settingsModal.classList.remove("show");
+        showToast("畫布設定已更新");
+      });
+
+      DOM.cancelSettingsButton.addEventListener("click", () => {
+        DOM.settingsModal.classList.remove("show");
+      });
+
+      // 重設按鈕
+      DOM.resetButton.addEventListener("click", () => {
+        DOM.resetConfirmModal.classList.add("show");
+      });
+
+      DOM.confirmResetButton.addEventListener("click", async () => {
+        stopPlayback();
+        await clearProjectFromDB();
+        AppState.frames = [];
+        AppState.currentFrameIndex = 0;
+        createNewFrame();
+        DOM.resetConfirmModal.classList.remove("show");
+        showToast("專案已重設");
+      });
+
+      DOM.cancelResetButton.addEventListener("click", () => {
+        DOM.resetConfirmModal.classList.remove("show");
+      });
+
+      // ==================== 畫布繪圖事件 ====================
+      DOM.canvas.addEventListener("mousedown", (e) => {
+        if (AppState.isPlaying) return;
+
+        const rect = DOM.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        DrawingState.isDrawing = true;
+        DrawingState.lastX = x;
+        DrawingState.lastY = y;
+
+        if (AppState.currentTool === "bucket") {
+          floodFill(x, y, AppState.currentColor);
+          DrawingState.isDrawing = false;
+        }
+      });
+
+      DOM.canvas.addEventListener("mousemove", (e) => {
+        if (!DrawingState.isDrawing || AppState.isPlaying) return;
+
+        const rect = DOM.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        if (AppState.currentTool === "pencil") {
+          drawLine(DrawingState.lastX, DrawingState.lastY, x, y);
+        } else if (AppState.currentTool === "eraser") {
+          erase(DrawingState.lastX, DrawingState.lastY, x, y);
+        }
+
+        DrawingState.lastX = x;
+        DrawingState.lastY = y;
+      });
+
+      DOM.canvas.addEventListener("mouseup", () => {
+        DrawingState.isDrawing = false;
+        saveProjectToDB();
+      });
+
+      DOM.canvas.addEventListener("mouseleave", () => {
+        DrawingState.isDrawing = false;
+      });
+
+      // ==================== 快鍵綁定 ====================
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "p" || e.key === "P") {
+          AppState.currentTool = "pencil";
+          updateToolUI();
+        } else if (e.key === "e" || e.key === "E") {
+          AppState.currentTool = "eraser";
+          updateToolUI();
+        } else if (e.key === "b" || e.key === "B") {
+          AppState.currentTool = "bucket";
+          updateToolUI();
+        } else if (e.key === "o" || e.key === "O") {
+          AppState.onionSkinEnabled = !AppState.onionSkinEnabled;
+          DOM.toggleOnionSkinButton.style.backgroundColor =
+            AppState.onionSkinEnabled ? "#1e40af" : "#1e293b";
+          renderFrame();
+        } else if (e.code === "Space") {
+          e.preventDefault();
+          DOM.playButton.click();
+        }
+      });
+
+      // ==================== 幀清單管理 ====================
+      function updateFramesList() {
+        DOM.framesList.innerHTML = "";
+
+        AppState.frames.forEach((frame, index) => {
+          const thumbnail = document.createElement("canvas");
+          thumbnail.width = 60;
+          thumbnail.height = 60;
+          thumbnail.className = `frame-thumbnail ${index === AppState.currentFrameIndex ? "active" : ""}`;
+
+          const thumbCtx = thumbnail.getContext("2d");
+          thumbCtx.drawImage(
+            frame,
+            0,
+            0,
+            AppState.canvasWidth,
+            AppState.canvasHeight,
+            0,
+            0,
+            60,
+            60,
+          );
+
+          thumbnail.addEventListener("click", () => {
+            stopPlayback();
+            AppState.currentFrameIndex = index;
+            renderFrame();
+            updateFramesList();
+            updateFrameInfo();
+          });
+
+          DOM.framesList.appendChild(thumbnail);
+        });
+      }
+
+      function updateFrameInfo() {
+        DOM.frameInfo.textContent = `幀: ${AppState.currentFrameIndex + 1}/${AppState.frames.length}`;
+      }
+
+      // ==================== 通知提示 ====================
+      function showToast(message) {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.animation = "slideOutRight 0.3s ease forwards";
+          setTimeout(() => toast.remove(), 300);
+        }, 2000);
+      }
+
+      // ==================== 初始化應用程式 ====================
+      async function initApp() {
+        try {
+          // 初始化 IndexedDB
+          await initDB();
+
+          // 嘗試從 IndexedDB 恢復數據
+          const savedProject = await loadProjectFromDB();
+          if (savedProject && savedProject.frames.length > 0) {
+            await restoreProjectFromDB();
+          } else {
+            // 創建新的空白專案
+            createNewFrame();
+            showToast("已建立新專案");
+          }
+
+          // 更新 UI
+          updateToolUI();
+          updateFrameInfo();
+
+          // Lucide Icons 初始化
+          if (typeof lucide !== "undefined") {
+            lucide.createIcons();
+          }
+        } catch (error) {
+          console.error("應用程式初始化失敗:", error);
+          createNewFrame();
+          showToast("初始化異常，已建立新專案");
+        }
+      }
+
+      // 應用程式啟動
+      initApp();
+    </script>
+  </body>
+</html>
